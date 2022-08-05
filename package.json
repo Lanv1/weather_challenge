@@ -1,0 +1,28 @@
+{
+  "name": "weather_challenge",
+  "version": "1.0.0",
+  "description": "A real time weather js application.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node public/js/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lanv1/weather_challenge.git"
+  },
+  "keywords": [
+    "weather",
+    "API"
+  ],
+  "author": "spon",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Lanv1/weather_challenge/issues"
+  },
+  "homepage": "https://github.com/Lanv1/weather_challenge#readme",
+  "dependencies": {
+    "express": "^4.18.1",
+    "socket.io": "^4.5.1",
+    "three": "^0.143.0"
+  }
+}

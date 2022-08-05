@@ -1,0 +1,24 @@
+html{
+    margin: none;
+    height: 100%;
+}
+
+body{
+    margin: none;
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.main{
+    display: flex;
+}
+
+.cityInfo{
+    padding: 10px;
+}
+
+.cityName{
+    padding: 10px;
+}
