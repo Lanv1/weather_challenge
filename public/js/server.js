@@ -9,7 +9,15 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
-//Misc functions
+//Save current data for new clients connecting.
+let currentResult = {
+  city : "",
+  country : "",
+  description : "",
+  temperature : ""
+}
+
+//Misc functions.
 const loadDb = function(filePath){
   return JSON.parse(fs.readFileSync(filePath));
 }
@@ -22,36 +30,14 @@ const getNextCity = function(dataBase, currentCity = ""){
   while((dataBase[cityIndex].capital).toLowerCase() == current){
     cityIndex = Math.floor(Math.random() * max - 1);
   }
-
   return dataBase[cityIndex];
 }
-
-
-
-//Server setup
-const server = http.createServer(app);
-const io = socketIo(server);
-
-app.use(express.static('public'));
-
-app.get('/', function (req, res) {
-  res.sendFile('../index.html');
-});
-
-io.on('connection', function(socket) {
-    console.log(`user ${socket.id} is connected.`);
-});
-
-server.listen(port, null, function() {
-    console.log(`running on http://localhost:${port}`);
-});
-
 
 
 //Loading dataSet (country capitals).
 const citiesData = loadDb(path.join(__dirname, "../citiesData.json"));
 
-//Query on API (get city weather).
+//Query on API (get city weather) and emit result to clients.
 const weatherCityHandler = function(locationData) {
   
   //Get weather data on city from API
@@ -66,12 +52,8 @@ const weatherCityHandler = function(locationData) {
   https.get(url, function(res) {
 
     let data = "";
-    let result = {
-      city : locationData.capital,
-      country : locationData.country,
-      description : "",
-      temperature : ""
-    };
+    currentResult.city = locationData.capital;
+    currentResult.country = locationData.country;
 
     res.on("data", function(chunk) {
       data += chunk;
@@ -82,19 +64,51 @@ const weatherCityHandler = function(locationData) {
       }else {
         //Parse useful data
         const weather = JSON.parse(data);        
-        result.description = weather.weather[0].main;
-        result.temperature = weather.main.temp;
-        console.log(result);
+        currentResult.description = weather.weather[0].main;
+        currentResult.temperature = weather.main.temp;
+        console.log(currentResult);
 
-        //Broadcast new city and weather data to all clients.
-        //...[TODO]
+        //Emit new city and weather data to all clients.
+        io.emit("newData", currentResult);
       }
 
     });
   });
 }
 
-//test
-weatherCityHandler(getNextCity(citiesData));
+//Fetch and handle new city informations every 30sec.
+const runApp = function() {
+  let lastCityInfo = getNextCity(citiesData);
+  weatherCityHandler(lastCityInfo);
+
+  setInterval(function() {
+    let currentCityInfo = getNextCity(citiesData, lastCityInfo.capital);
+    lastCityInfo = currentCityInfo;
+
+    weatherCityHandler(currentCityInfo);
+  }, 30000);
+}
+
+//Server setup
+const server = http.createServer(app);
+const io = socketIo(server);
+
+app.use(express.static('public'));
+
+app.get('/', function (req, res) {
+  res.sendFile('../index.html');
+});
+
+io.on('connection', function(socket) {
+  console.log(`user ${socket.id} is connected.`);
+  socket.emit("currentData", currentResult);
+});
+
+server.listen(port, null, function() {
+  console.log(`running on http://localhost:${port}`);
+});
+
+runApp();
+
 
 

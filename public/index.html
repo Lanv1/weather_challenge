@@ -6,13 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="style.css">
     <script src="/socket.io/socket.io.js"></script>
-    <script src="js/client.js"></script>
+    <script src="js/client.js" async></script>
     <title>realtime weather</title>
 </head>
 <body>
     <div class="main">
-        <div class="cityName">city</div>
-        <div class="cityInfo">31deg</div>
+        <div class="place">
+            <div class="cityName">city</div>
+            <div class="countryName">country</div>
+        </div>
+        <div class="cityTemp">31deg</div>
     </div>
 </body>
 </html>

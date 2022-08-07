@@ -15,10 +15,20 @@ body{
     display: flex;
 }
 
-.cityInfo{
+.place{
+    display: flex;
+    flex-direction: column;
+}
+
+.cityTemp{
     padding: 10px;
 }
 
 .cityName{
+    font-size: 42px;
+    padding: 10px;
+}
+
+.countryName{
     padding: 10px;
 }
