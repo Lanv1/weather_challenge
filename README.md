@@ -6,7 +6,10 @@
 &rarr; **[API](https://rapidapi.com/KirylBokiy/api/openweather43/)** used.
 ### **Usage**
 ```
-npm install
-npm run main
+>npm install
+>npm run main
 ```
+click **[localhost](http://localhost:3000)** once server started
+
+
 
