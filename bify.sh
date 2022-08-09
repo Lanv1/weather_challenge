@@ -1,0 +1,1 @@
+browserify public/js/client.js -p esmify > public/js/bundle.js

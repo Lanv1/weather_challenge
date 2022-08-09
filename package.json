@@ -25,5 +25,9 @@
     "node-fetch": "^3.2.10",
     "socket.io": "^4.5.1",
     "three": "^0.143.0"
+  },
+  "devDependencies": {
+    "browser-resolve": "^2.0.0",
+    "esmify": "^2.1.1"
   }
 }

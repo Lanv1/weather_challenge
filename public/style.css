@@ -1,3 +1,9 @@
+@font-face {
+    font-family: 'alarm';
+    src: url('./assets/alarm_clock.ttf');
+}
+
+
 html{
     margin: none;
     height: 100%;
@@ -11,8 +17,15 @@ body{
     justify-content: center;
 }
 
+.webgl{
+    position: absolute;
+    z-index: -1;
+}
+
 .main{
+    position: relative;
     display: flex;
+    right: 20%;
 }
 
 .place{
@@ -21,14 +34,30 @@ body{
 }
 
 .cityTemp{
-    padding: 10px;
+    padding: 42px;
+    font-family: alarm;
+    color: rgb(248, 16, 16);
+    text-shadow:
+        /* light glow */
+        0 0 7px rgb(187, 92, 92),
+        0 0 10px rgb(187, 92, 92),
+        0 0 21px rgb(187, 92, 92),
+        /* darker glow */
+        0 0 42px rgb(95, 29, 13),
+        0 0 82px rgb(95, 29, 13),
+        0 0 92px rgb(95, 29, 13),
+        0 0 102px rgb(95, 29, 13),
+        0 0 151px rgb(95, 29, 13);
 }
 
 .cityName{
-    font-size: 42px;
+    font-size: 64px;
     padding: 10px;
+    color: aliceblue;
 }
 
 .countryName{
     padding: 10px;
+    color: aliceblue;
+
 }
