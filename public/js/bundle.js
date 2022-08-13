@@ -2486,208 +2486,6 @@ exports.DataTexture2DArray=DataTexture2DArray;class DataTexture3D extends Data3D
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.TextGeometry = void 0;
-
-var _three = require("three");
-
-/**
- * Text = 3D Text
- *
- * parameters = {
- *  font: <THREE.Font>, // font
- *
- *  size: <float>, // size of the text
- *  height: <float>, // thickness to extrude text
- *  curveSegments: <int>, // number of points on the curves
- *
- *  bevelEnabled: <bool>, // turn on bevel
- *  bevelThickness: <float>, // how deep into text bevel goes
- *  bevelSize: <float>, // how far from text outline (including bevelOffset) is bevel
- *  bevelOffset: <float> // how far from text outline does bevel start
- * }
- */
-class TextGeometry extends _three.ExtrudeGeometry {
-  constructor(text, parameters = {}) {
-    const font = parameters.font;
-
-    if (font === undefined) {
-      super(); // generate default extrude geometry
-    } else {
-      const shapes = font.generateShapes(text, parameters.size); // translate parameters to ExtrudeGeometry API
-
-      parameters.depth = parameters.height !== undefined ? parameters.height : 50; // defaults
-
-      if (parameters.bevelThickness === undefined) parameters.bevelThickness = 10;
-      if (parameters.bevelSize === undefined) parameters.bevelSize = 8;
-      if (parameters.bevelEnabled === undefined) parameters.bevelEnabled = false;
-      super(shapes, parameters);
-    }
-
-    this.type = 'TextGeometry';
-  }
-
-}
-
-exports.TextGeometry = TextGeometry;
-
-},{"three":1}],3:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.FontLoader = exports.Font = void 0;
-
-var _three = require("three");
-
-class FontLoader extends _three.Loader {
-  constructor(manager) {
-    super(manager);
-  }
-
-  load(url, onLoad, onProgress, onError) {
-    const scope = this;
-    const loader = new _three.FileLoader(this.manager);
-    loader.setPath(this.path);
-    loader.setRequestHeader(this.requestHeader);
-    loader.setWithCredentials(scope.withCredentials);
-    loader.load(url, function (text) {
-      let json;
-
-      try {
-        json = JSON.parse(text);
-      } catch (e) {
-        console.warn('THREE.FontLoader: typeface.js support is being deprecated. Use typeface.json instead.');
-        json = JSON.parse(text.substring(65, text.length - 2));
-      }
-
-      const font = scope.parse(json);
-      if (onLoad) onLoad(font);
-    }, onProgress, onError);
-  }
-
-  parse(json) {
-    return new Font(json);
-  }
-
-} //
-
-
-exports.FontLoader = FontLoader;
-
-class Font {
-  constructor(data) {
-    this.isFont = true;
-    this.type = 'Font';
-    this.data = data;
-  }
-
-  generateShapes(text, size = 100) {
-    const shapes = [];
-    const paths = createPaths(text, size, this.data);
-
-    for (let p = 0, pl = paths.length; p < pl; p++) {
-      shapes.push(...paths[p].toShapes());
-    }
-
-    return shapes;
-  }
-
-}
-
-exports.Font = Font;
-
-function createPaths(text, size, data) {
-  const chars = Array.from(text);
-  const scale = size / data.resolution;
-  const line_height = (data.boundingBox.yMax - data.boundingBox.yMin + data.underlineThickness) * scale;
-  const paths = [];
-  let offsetX = 0,
-      offsetY = 0;
-
-  for (let i = 0; i < chars.length; i++) {
-    const char = chars[i];
-
-    if (char === '\n') {
-      offsetX = 0;
-      offsetY -= line_height;
-    } else {
-      const ret = createPath(char, scale, offsetX, offsetY, data);
-      offsetX += ret.offsetX;
-      paths.push(ret.path);
-    }
-  }
-
-  return paths;
-}
-
-function createPath(char, scale, offsetX, offsetY, data) {
-  const glyph = data.glyphs[char] || data.glyphs['?'];
-
-  if (!glyph) {
-    console.error('THREE.Font: character "' + char + '" does not exists in font family ' + data.familyName + '.');
-    return;
-  }
-
-  const path = new _three.ShapePath();
-  let x, y, cpx, cpy, cpx1, cpy1, cpx2, cpy2;
-
-  if (glyph.o) {
-    const outline = glyph._cachedOutline || (glyph._cachedOutline = glyph.o.split(' '));
-
-    for (let i = 0, l = outline.length; i < l;) {
-      const action = outline[i++];
-
-      switch (action) {
-        case 'm':
-          // moveTo
-          x = outline[i++] * scale + offsetX;
-          y = outline[i++] * scale + offsetY;
-          path.moveTo(x, y);
-          break;
-
-        case 'l':
-          // lineTo
-          x = outline[i++] * scale + offsetX;
-          y = outline[i++] * scale + offsetY;
-          path.lineTo(x, y);
-          break;
-
-        case 'q':
-          // quadraticCurveTo
-          cpx = outline[i++] * scale + offsetX;
-          cpy = outline[i++] * scale + offsetY;
-          cpx1 = outline[i++] * scale + offsetX;
-          cpy1 = outline[i++] * scale + offsetY;
-          path.quadraticCurveTo(cpx1, cpy1, cpx, cpy);
-          break;
-
-        case 'b':
-          // bezierCurveTo
-          cpx = outline[i++] * scale + offsetX;
-          cpy = outline[i++] * scale + offsetY;
-          cpx1 = outline[i++] * scale + offsetX;
-          cpy1 = outline[i++] * scale + offsetY;
-          cpx2 = outline[i++] * scale + offsetX;
-          cpy2 = outline[i++] * scale + offsetY;
-          path.bezierCurveTo(cpx1, cpy1, cpx2, cpy2, cpx, cpy);
-          break;
-      }
-    }
-  }
-
-  return {
-    offsetX: glyph.ha * scale,
-    path: path
-  };
-}
-
-},{"three":1}],4:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 exports.GLTFLoader = void 0;
 
 var _three = require("three");
@@ -5864,21 +5662,102 @@ function toTrianglesDrawMode(geometry, drawMode) {
   return newGeometry;
 }
 
-},{"three":1}],5:[function(require,module,exports){
+},{"three":1}],3:[function(require,module,exports){
 "use strict";
 
 var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
-
-var _FontLoader = require("three/examples/jsm/loaders/FontLoader.js");
-
-var _TextGeometry = require("three/examples/jsm/geometries/TextGeometry.js");
 
 const THREE = require('three/');
 
 const socket = io();
 const cityElement = document.querySelector(".cityName");
 const countryElement = document.querySelector(".countryName");
-const temperatureElement = document.querySelector(".cityTemp"); //Client setup
+const temperatureElement = document.querySelector(".cityTemp"); //Returns alpha value for light interpolation
+
+function getAlpha(temperature, max, min) {
+  let step = 1 / max; //clamp temperature
+
+  let temp = temperature > max ? max : temperature < min ? 0 : temperature - min;
+  return step * temp;
+} //THREEJS misc [TODO refactor]
+
+
+const scene = new THREE.Scene();
+let item = new THREE.Group();
+const red = new THREE.Color(0xff0000);
+const canvas = document.querySelector(".webgl");
+const renderer = new THREE.WebGLRenderer({
+  canvas: canvas,
+  antialias: true,
+  cullFaceFrontBack: true
+});
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 100); //init
+
+scene.background = new THREE.Color('#353535');
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+let ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+let dirLight = new THREE.DirectionalLight(0xffffff, 1);
+let ptLight = new THREE.PointLight(new THREE.Color(0xffffff), 4, 2, 0.5);
+scene.add(dirLight);
+scene.add(ambientLight);
+item.add(ptLight);
+ptLight.power = 300;
+camera.position.z = 10;
+renderer.outputEncoding = THREE.LinearEncoding;
+scene.add(item);
+item.position.set(3, 0, 0);
+let past = 0;
+let current;
+
+const animation = function () {
+  current = Date.now();
+  let dt = current - past;
+  dt *= 0.001;
+  past = current;
+  item.position.y = 1;
+  item.rotation.y = Math.sin(current * 0.001) * 0.5;
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(animation);
+}; //Mesh loading.
+
+
+const Gltfloader = new _GLTFLoader.GLTFLoader();
+renderer.outputEncoding = THREE.sRGBEncoding;
+Gltfloader.load('../assets/light_bulb.glb', function (gltf) {
+  camera.updateMatrixWorld();
+  let lightBulb = gltf.scene.children[0];
+  item.add(lightBulb);
+  lightBulb.material.depthWrite = true; //Textpos in mesh imported.
+  // let textPos = lightBulb.children[0].children[1].children[2].position;
+  // console.log(`textPos`);
+  // console.log(textPos);
+  // let ndc = textPos.clone();
+  // let normalized = ndc.project(camera);
+  // normalized.x = (normalized.x + 1) / 2 * innerWidth;
+  // normalized.y = -(normalized.y - 1) / 2 * innerHeight;
+  // // ndc.project(camera);
+  // console.log("NORMALIZED POS OF TEXT");
+  // console.log(normalized);
+  // let planeGeo = new THREE.PlaneGeometry(1, 1, 1, 1);
+  // let planeMat = new THREE.MeshBasicMaterial({color:0x00ff00});
+  // let plane = new THREE.Mesh(planeGeo, planeMat);
+  // scene.add(plane);
+  // plane.position.set(ndc.x, ndc.y, ndc.z);
+  // console.log(`NDC`);
+  // console.log(ndc);
+  // const translateX = ((ndc.x + 1) *window.innerWidth/4);
+  // const translateY = -(ndc.y + 1) * window.innerHeight/2;
+  // console.log(`TRANSLATIONS: X ${translateX}, Y ${translateY}`)
+  // temperatureElement.style.left = `${normalized.x}px`;
+  // temperatureElement.style.top = `${normalized.y}px`;
+
+  animation();
+  console.log(lightBulb);
+});
+window.addEventListener('click', function (ev) {
+  console.log(`clicked at ${ev.x}, ${ev.y}`);
+}); //Client setup
 
 socket.on('connect', function () {
   console.log(`You just connected as ${socket.id}.`); //Both events (on connection and on new city) emitted by serv are handled the same way.
@@ -5886,56 +5765,10 @@ socket.on('connect', function () {
   socket.onAny(function (eventname, res) {
     cityElement.textContent = res.city;
     countryElement.textContent = res.country;
-    temperatureElement.textContent = res.temperature;
-    console.log(res);
+    temperatureElement.textContent = res.temperature + "°C"; //Color interpolated (from blue to red) to control warmth.
+
+    ptLight.color.set(new THREE.Color(0x0000ff).lerp(red, getAlpha(res.temperature, 30, 10)));
   });
-}); //THREEjs [TODO refactor, cleaning]
-
-const canvas = document.querySelector(".webgl");
-const renderer = new THREE.WebGLRenderer({
-  canvas: canvas,
-  antialias: true,
-  cullFaceFrontBack: true
-});
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 100);
-const scene = new THREE.Scene(); //init
-
-scene.background = new THREE.Color('black');
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
-let ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-let dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-scene.add(dirLight);
-scene.add(ambientLight);
-camera.position.z = 10;
-const Gltfloader = new _GLTFLoader.GLTFLoader();
-renderer.outputEncoding = THREE.sRGBEncoding;
-Gltfloader.load('../assets/light_bulb.glb', function (gltf) {
-  let lightBulb = gltf.scene.children[0]; // console.log(lightBulb.position);
-
-  let textPos = lightBulb.children[0].children[1].children[2].position; // textPos.updateWorldMatrix();
-  // let m4 = textPos.matrixWorld
-
-  console.log(textPos);
-  let dotGeometry = new THREE.PlaneGeometry(1, 1, 1, 1);
-  let dotMaterial = new THREE.MeshBasicMaterial({
-    color: 0xff0000
-  });
-  let dot = new THREE.Mesh(dotGeometry, dotMaterial);
-  let pos = new THREE.Vector3(); // pos.setFromMatrixPosition(m4);
-
-  dot.position.set(textPos.x, textPos.y, textPos.z); // dot.translateZ(0.1);
-  // dot.translateY(lightBulb.position.y);
-  // console.log(dot.position);
-
-  scene.add(dot); // let planeGeo2 = new THREE.PlaneGeometry(0.5, 0.5, 0.5, 0.5);
-  // let planeMat2 = new THREE.MeshBasicMaterial({color:0xff00ff});
-  // let plane2 = new THREE.Mesh(planeGeo2, planeMat2);
-  // scene.add(plane)
-
-  console.log(lightBulb);
-  scene.add(lightBulb);
-  renderer.render(scene, camera);
 });
 
-},{"three/":1,"three/examples/jsm/geometries/TextGeometry.js":2,"three/examples/jsm/loaders/FontLoader.js":3,"three/examples/jsm/loaders/GLTFLoader.js":4}]},{},[5]);
+},{"three/":1,"three/examples/jsm/loaders/GLTFLoader.js":2}]},{},[3]);

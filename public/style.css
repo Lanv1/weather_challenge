@@ -7,10 +7,12 @@
 html{
     margin: none;
     height: 100%;
+    overflow: hidden;
 }
 
 body{
     margin: none;
+    border: none;
     display: flex;
     height: 100%;
     align-items: center;
@@ -25,6 +27,7 @@ body{
 .main{
     position: relative;
     display: flex;
+    flex-direction: column;
     right: 20%;
 }
 
@@ -34,7 +37,9 @@ body{
 }
 
 .cityTemp{
-    padding: 42px;
+    font-size: 54px;
+    /* right: 50%;
+    top: 50%; */
     font-family: alarm;
     color: rgb(248, 16, 16);
     text-shadow:
