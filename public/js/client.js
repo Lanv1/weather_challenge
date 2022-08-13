@@ -6,6 +6,9 @@ const socket = io();
 const cityElement = document.querySelector(".cityName");
 const countryElement = document.querySelector(".countryName");
 const temperatureElement = document.querySelector(".cityTemp");
+const canvas = document.querySelector(".webgl");
+
+let cityDesc;
 
 //Returns alpha value for light interpolation
 function getAlpha(temperature, max, min) {
@@ -20,12 +23,12 @@ function getAlpha(temperature, max, min) {
 
 //THREEJS misc [TODO refactor]
 const scene = new THREE.Scene();
-let item = new THREE.Group();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 1, 1000);
 
+let bulb = new THREE.Group();
+let crank = new THREE.Group();
 
 const red = new THREE.Color(0xff0000);
-
-const canvas = document.querySelector(".webgl");
 
 const renderer = new THREE.WebGLRenderer( {
     canvas : canvas,
@@ -33,30 +36,33 @@ const renderer = new THREE.WebGLRenderer( {
     cullFaceFrontBack : true
 });
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 1, 100);
-
 
 //init
 scene.background = new THREE.Color('#353535');
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
 
+//lights
 let ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
 let dirLight = new THREE.DirectionalLight(0xffffff, 1);
 let ptLight = new THREE.PointLight(new THREE.Color(0xffffff), 4, 2, 0.5);
+ptLight.power = 300;
 
 scene.add(dirLight);
 scene.add(ambientLight);
-item.add(ptLight);
+bulb.add(ptLight);
 
-ptLight.power = 300;
 
 camera.position.z = 10;
 renderer.outputEncoding = THREE.LinearEncoding;
 
-scene.add(item);
-item.position.set(3, 0, 0);
+scene.add(bulb);
+scene.add(crank);
+bulb.position.set(4, 0, 0);
+// crank.position.set(3, 0, 0);
 
+let mustRotate = false;
+let targetQuat = new THREE.Quaternion();
 let past = 0;
 let current;
 const animation = function() {
@@ -66,8 +72,20 @@ const animation = function() {
     dt *= 0.001;
     past = current;
 
-    item.position.y = 1;
-    item.rotation.y = Math.sin(current * 0.001) *0.5;
+    bulb.position.y = 1;
+    bulb.rotation.y = Math.sin(current * 0.001) * 0.5;
+
+    if(mustRotate) {
+        if(!crank.children[0].quaternion.equals(targetQuat)){
+            console.log("ici");
+            crank.children[0].quaternion.rotateTowards(targetQuat, dt);
+        }else{
+            mustRotate = false;
+            // targetQuat.multiply(crank.children[0].quaternion);
+            // crank.children[0].quaternion.identity();
+        }
+    }
+    // crank.children[0].rotation.y += Math.PI * 0.001;
 
     renderer.render(scene, camera);
     window.requestAnimationFrame(animation);
@@ -76,10 +94,14 @@ const animation = function() {
 //Mesh loading.
 const Gltfloader = new GLTFLoader();
 renderer.outputEncoding = THREE.sRGBEncoding;
-Gltfloader.load('../assets/light_bulb.glb', function(gltf){
+Gltfloader.load('../assets/light_bulb_crank.glb', function(gltf){
+
+    console.log(gltf);
     camera.updateMatrixWorld();
     let lightBulb = gltf.scene.children[0];
-    item.add(lightBulb);
+    let crankMesh = gltf.scene.children[1];
+    crank.add(crankMesh);
+    bulb.add(lightBulb);
     lightBulb.material.depthWrite = true;
     
     //Textpos in mesh imported.
@@ -116,8 +138,29 @@ Gltfloader.load('../assets/light_bulb.glb', function(gltf){
     console.log(lightBulb);
 });
 
+//Test only
 window.addEventListener('click', function(ev) {
     console.log(`clicked at ${ev.x}, ${ev.y}`);
+    if(!targetQuat.equals( new THREE.Quaternion())){
+        targetQuat.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(120)));
+    }else{
+
+        targetQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(120));
+    }
+
+    mustRotate = true;
+});
+
+window.addEventListener('wheel',  function(ev) {
+    console.log(`clicked at ${ev.x}, ${ev.y}`);
+    if(!targetQuat.equals( new THREE.Quaternion())){
+        targetQuat.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(-120)));
+    }else{
+
+        targetQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(-120));
+    }
+
+    mustRotate = true;
 });
 
 //Client setup
@@ -129,6 +172,9 @@ socket.on('connect', function() {
         cityElement.textContent = res.city;
         countryElement.textContent = res.country;
         temperatureElement.textContent = res.temperature + "°C";
+        cityDesc = res.description;
+
+        console.log("city description " + cityDesc);
 
         //Color interpolated (from blue to red) to control warmth.
         ptLight.color.set(
