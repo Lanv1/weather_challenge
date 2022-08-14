@@ -5712,6 +5712,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
 let bulb = new THREE.Group();
 let crank = new THREE.Group();
+let bulbPivot = new THREE.Group();
 const red = new THREE.Color(0xff0000);
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -5734,17 +5735,19 @@ let indicator = new THREE.Mesh(new THREE.SphereBufferGeometry(1), new THREE.Mesh
 }));
 scene.add(dirLight);
 scene.add(ambientLight);
-bulb.add(ptLight);
 scene.add(indicator);
 scene.add(ptLightCrank);
 ptLightCrank.position.set(0, 10, -10);
 indicator.position.set(0.7, -2, -3);
 camera.position.z = 10;
-renderer.outputEncoding = THREE.sRGBEncoding;
-scene.add(bulb);
-scene.add(crank);
-bulb.position.set(4, 0, 0); // crank.position.set(3, 0, 0);
+renderer.outputEncoding = THREE.sRGBEncoding; //Move pivot point of lightBulb.
 
+bulbPivot.rotation.order = "YXZ";
+bulbPivot.add(bulb);
+bulb.translateY(1);
+scene.add(bulbPivot);
+scene.add(crank);
+bulbPivot.position.set(4, 0, 0);
 let mustRotate = false;
 let targetQuat = new THREE.Quaternion();
 let past = 0;
@@ -5754,9 +5757,16 @@ const animation = function () {
   current = Date.now();
   let dt = current - past;
   dt *= 0.001;
-  past = current;
-  bulb.position.y = 1;
-  bulb.rotation.y = Math.sin(current * 0.001) * 0.5;
+  past = current; // bulb.position.y = 1;
+  // bulb.rotation.y = Math.sin(current * 0.001) * 0.5;
+  // bulb.rotation.x = Math.PI * current * 0.0001;
+  // bulb.children[0].translateY(1);
+  // bulb.children[0].rotateX(Math.PI * current * 0.0001);
+  // bulb.children[0].translateY(-1);
+
+  bulbPivot.rotation.x = Math.PI * current * 0.0001;
+  bulbPivot.rotation.y = Math.PI * current * 0.0001; // bulbPivot.rotation.z = Math.PI * current * 0.0001;
+  // bulb.position.y = 0;
 
   if (mustRotate) {
     if (!crank.children[0].quaternion.equals(targetQuat)) {
@@ -5777,13 +5787,12 @@ Gltfloader.load('../assets/light_bulb_crank_alpha.glb', function (gltf) {
   console.log(gltf);
   camera.updateMatrixWorld();
   let lightBulb = gltf.scene.children[0];
-  let crankMesh = gltf.scene.children[1]; // crankMesh.children.forEach(function(state, index) {
-  //     crankStates[index] = state.name;
-  // });
-  // console.log(crankStates);
+  let crankMesh = gltf.scene.children[1]; // console.log(crankStates);
 
   crank.add(crankMesh);
-  bulb.add(lightBulb);
+  bulb.add(lightBulb); //A point light is attached to the bulb.
+
+  lightBulb.add(ptLight);
   lightBulb.material.depthWrite = true;
   lightBulb.material.opacity = 0.5;
   console.log(crankMesh);
@@ -5823,6 +5832,11 @@ socket.on('connect', function () {
 
     ptLight.color.lerpColors(new THREE.Color(0xffffff), colorToUse, 0.8);
   });
+});
+window.addEventListener('resize', function () {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 },{"three/":1,"three/examples/jsm/loaders/GLTFLoader.js":2}]},{},[3]);
