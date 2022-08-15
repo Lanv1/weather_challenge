@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const socket = io();
 
+const mainElement = document.querySelector(".main");
 const cityElement = document.querySelector(".cityName");
 const countryElement = document.querySelector(".countryName");
 const temperatureElement = document.querySelector(".cityTemp");
@@ -25,6 +26,7 @@ const getAlpha = function(temperature, max, min) {
 
 //Rotate crank to next or previous state
 const rotateCrank = function(direction, quat) {
+    //3 states -> angle = (2*PI / 3)
     let angle = THREE.MathUtils.degToRad(direction * 120);
 
     if(!quat.equals(new THREE.Quaternion())) {
@@ -76,7 +78,6 @@ let dirLight = new THREE.DirectionalLight(0xffffff, 1);
 let ptLight = new THREE.PointLight(new THREE.Color(0xffffff), 10, 2);
 let ptLightCrank = new THREE.PointLight(new THREE.Color(0xcceeff), 0.5, 10);
 
-
 ptLight.power = 2000;
 ptLightCrank.power = 100;
 
@@ -86,9 +87,9 @@ let indicator = new THREE.Mesh(
 );
 
 
+// scene.add(indicator);
 scene.add(dirLight);
 scene.add(ambientLight);
-scene.add(indicator);
 scene.add(ptLightCrank);
 
 ptLightCrank.position.set(0, 10, -10);
@@ -119,17 +120,9 @@ const animation = function() {
     dt *= 0.001;
     past = current;
 
-    // bulb.position.y = 1;
-    // bulb.rotation.y = Math.sin(current * 0.001) * 0.5;
-    // bulb.rotation.x = Math.PI * current * 0.0001;
-    // bulb.children[0].translateY(1);
-    // bulb.children[0].rotateX(Math.PI * current * 0.0001);
-    // bulb.children[0].translateY(-1);
-
     bulbPivot.rotation.x = Math.PI * current * 0.0001;
     bulbPivot.rotation.y = Math.PI * current * 0.0001;
-    // bulbPivot.rotation.z = Math.PI * current * 0.0001;
-    // bulb.position.y = 0;
+
 
     if(mustRotate) {
         if(!crank.children[0].quaternion.equals(targetQuat)){
@@ -146,14 +139,13 @@ const animation = function() {
 //Mesh loading.
 const Gltfloader = new GLTFLoader();
 renderer.outputEncoding = THREE.sRGBEncoding;
-Gltfloader.load('../assets/light_bulb_crank_alpha.glb', function(gltf){
+Gltfloader.load('../assets/light_bulb_crank.glb', function(gltf){
 
     console.log(gltf);
     camera.updateMatrixWorld();
     let lightBulb = gltf.scene.children[0];
     let crankMesh = gltf.scene.children[1];
 
-    // console.log(crankStates);
     crank.add(crankMesh);
     bulb.add(lightBulb);
 
@@ -174,13 +166,21 @@ socket.on('connect', function() {
     
     //Both events (on connection and on new city) emitted by serv are handled the same way.
     socket.onAny(function(eventname, res) {
+
+        // mainElement.style.opacity = 0;
+        
+        // setTimeout(function() {
         cityElement.textContent = res.city;
         countryElement.textContent = res.country;
         temperatureElement.textContent = res.temperature + "°C";
         lastDesc = currentDesc;
         currentDesc = res.description;
+        
+        //     mainElement.style.opacity = 1;
+        // }, 1000)
+        
 
-        //Rare states (mist, thunderstorm ...)
+        //Rare states (mist, thunderstorm, drizzle, ...)
         if(currentDesc === "Thunderstorm"){
             currentDesc = "Rain";
         }else if(!crankStates.includes(currentDesc)) {
@@ -195,7 +195,7 @@ socket.on('connect', function() {
         //Color interpolated (from blue to red) to control warmth.
         let alpha = getAlpha(res.temperature, 30, 10)
         let colorToUse = new THREE.Color(0x0000ff).lerp(red, alpha);
-        indicator.material.color.set(colorToUse);
+        // indicator.material.color.set(colorToUse);
         // ptLightCrank.color.lerpColors(
         //     new THREE.Color(0xffffff),
         //     colorToUse,

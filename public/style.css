@@ -1,6 +1,9 @@
 @font-face {
     font-family: 'alarm';
     src: url('./assets/alarm_clock.ttf');
+    
+    font-family: 'bitter';
+    src: url('./assets/Bitter_Regular.ttf');
 }
 
 
@@ -8,6 +11,7 @@ html{
     margin: none;
     height: 100%;
     overflow: hidden;
+    font-family: bitter;
 }
 
 body{
@@ -29,6 +33,7 @@ body{
     display: flex;
     flex-direction: column;
     right: 25%;
+    transition: opacity 1s;
 }
 
 .place{
@@ -36,26 +41,21 @@ body{
     flex-direction: column;
 }
 
+.main{
+    /* background-color: #826539; */
+    box-shadow: 10px 9px 21px -6px rgba(0,0,0,0.43);
+    border-radius: 9px 9px 9px 9px;
+    padding: 15px;
+}
+
 .cityTemp{
     font-size: 54px;
-    /* right: 50%;
-    top: 50%; */
     font-family: alarm;
-    color: rgb(248, 16, 16);
-    text-shadow:
-        /* light glow */
-        0 0 7px rgb(187, 92, 92),
-        0 0 10px rgb(187, 92, 92),
-        0 0 21px rgb(187, 92, 92),
-        /* darker glow */
-        0 0 42px rgb(95, 29, 13),
-        0 0 82px rgb(95, 29, 13),
-        0 0 92px rgb(95, 29, 13),
-        0 0 102px rgb(95, 29, 13),
-        0 0 151px rgb(95, 29, 13);
+    color: aliceblue
 }
 
 .cityName{
+    font-family: bitter;
     font-size: 64px;
     padding: 10px;
     color: aliceblue;

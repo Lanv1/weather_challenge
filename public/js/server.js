@@ -25,10 +25,10 @@ const loadDb = function(filePath){
 const getNextCity = function(dataBase, currentCity = ""){
   let max = dataBase.length;
   let current = currentCity.toLowerCase();
-  let cityIndex = Math.floor(Math.random() * max - 1);
+  let cityIndex = Math.floor(Math.random() * (max + 1));
   
   while((dataBase[cityIndex].capital).toLowerCase() == current){
-    cityIndex = Math.floor(Math.random() * max - 1);
+    cityIndex = Math.floor(Math.random() * (max + 1));
   }
   return dataBase[cityIndex];
 }
@@ -40,9 +40,9 @@ const citiesData = loadDb(path.join(__dirname, "../citiesData.json"));
 //Query on API (get city weather) and emit result to clients.
 const weatherCityHandler = function(locationData) {
   
-  //Get weather data on city from API
+  //Get weather data on city from API (remove accents)
   const options = {
-    "city": locationData.capital,
+    "city": locationData.capital.normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
     "apiKey": "da0f9c8d90bde7e619c3ec47766a42f4",
     "units": "metric",
   };
@@ -59,8 +59,8 @@ const weatherCityHandler = function(locationData) {
       data += chunk;
   
       if(res.statusCode === 404 || res.statusCode == 400) {
-        console.log("ERROR " + res.statusCode);
-
+        console.log("ERROR " + res.statusCode + ", for city " + options.city);
+        
       }else {
         //Parse useful data
         const weather = JSON.parse(data);        

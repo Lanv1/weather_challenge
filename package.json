@@ -22,7 +22,6 @@
   "homepage": "https://github.com/Lanv1/weather_challenge#readme",
   "dependencies": {
     "express": "^4.18.1",
-    "node-fetch": "^3.2.10",
     "socket.io": "^4.5.1",
     "three": "^0.143.0"
   },
