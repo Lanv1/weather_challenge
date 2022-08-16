@@ -5724,22 +5724,38 @@ const renderer = new THREE.WebGLRenderer({
 
 scene.background = new THREE.Color('#353535');
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(2, window.devicePixelRatio)); //lights
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio)); //bg plane
 
-let ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+let plane = new THREE.Mesh(new THREE.PlaneGeometry(60, 30, 1, 1), new THREE.MeshStandardMaterial({
+  color: 0xffffff
+}));
+plane.position.set(0, 0, -20);
+scene.add(plane); //lights
+
+let ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
 let dirLight = new THREE.DirectionalLight(0xffffff, 1);
-let ptLight = new THREE.PointLight(new THREE.Color(0xffffff), 10, 2);
-let ptLightCrank = new THREE.PointLight(new THREE.Color(0xcceeff), 0.5, 10);
+let ptLight = new THREE.PointLight(new THREE.Color(0xffffff), 100, 2);
+let spotLightCrank = new THREE.SpotLight(0xffffff, 0.8, 0, Math.PI / 3, 0.3);
+let spotLightState = new THREE.SpotLight(new THREE.Color(0xcceeff), 0.8, 30, Math.PI / 6, 0.5, 2);
+spotLightState.castShadow = true;
+let targetState = plane.position.clone().addScaledVector(new THREE.Vector3(-2, 1, 0), 3);
+spotLightState.target.position.set(targetState.x, targetState.y, targetState.z); // spotLightCrank.target = crank;
+
 ptLight.power = 2000;
-ptLightCrank.power = 100;
+spotLightState.power = 10;
+spotLightCrank.power = 10;
 let indicator = new THREE.Mesh(new THREE.SphereBufferGeometry(1), new THREE.MeshPhongMaterial({
   specular: 0xffffff
-})); // scene.add(indicator);
+})); // crank.add(ptLightCrank);
+// ptLightCrank.position.set(0, 10, -2);
+// scene.add(indicator);
 
 scene.add(dirLight);
 scene.add(ambientLight);
-scene.add(ptLightCrank);
-ptLightCrank.position.set(0, 10, -10);
+scene.add(spotLightCrank);
+scene.add(spotLightState);
+scene.add(spotLightState.target); // spotLightCrank.position.set(-1, 0, 0);
+
 indicator.position.set(0.7, -2, -3);
 camera.position.z = 10;
 renderer.outputEncoding = THREE.sRGBEncoding; //Move pivot point of lightBulb.
@@ -5784,7 +5800,10 @@ Gltfloader.load('../assets/light_bulb_crank.glb', function (gltf) {
   let lightBulb = gltf.scene.children[0];
   let crankMesh = gltf.scene.children[1];
   crank.add(crankMesh);
-  bulb.add(lightBulb); //A point light is attached to the bulb.
+  bulb.add(lightBulb);
+  spotLightCrank.target = crankMesh;
+  let spotLightPos = crankMesh.position.clone();
+  spotLightCrank.position.set(spotLightPos.x, 0, spotLightPos.z); //A point light is attached to the bulb.
 
   lightBulb.add(ptLight);
   lightBulb.material.depthWrite = true;
@@ -5806,7 +5825,7 @@ socket.on('connect', function () {
     lastDesc = currentDesc;
     currentDesc = res.description; //     mainElement.style.opacity = 1;
     // }, 1000)
-    //Rare states (mist, thunderstorm ...)
+    //Rare states (mist, thunderstorm, drizzle, ...)
 
     if (currentDesc === "Thunderstorm") {
       currentDesc = "Rain";
@@ -5822,12 +5841,8 @@ socket.on('connect', function () {
 
     let alpha = getAlpha(res.temperature, 30, 10);
     let colorToUse = new THREE.Color(0x0000ff).lerp(red, alpha); // indicator.material.color.set(colorToUse);
-    // ptLightCrank.color.lerpColors(
-    //     new THREE.Color(0xffffff),
-    //     colorToUse,
-    //     alpha
-    // );
 
+    spotLightState.color.lerpColors(new THREE.Color(0xffffff), colorToUse, 0.5);
     ptLight.color.lerpColors(new THREE.Color(0xffffff), colorToUse, 0.8);
   });
 });
