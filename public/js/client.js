@@ -1,17 +1,15 @@
 const THREE = require('three/');
-import { Mesh } from 'three/';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const socket = io();
 
-const mainElement = document.querySelector(".main");
 const cityElement = document.querySelector(".cityName");
 const countryElement = document.querySelector(".countryName");
 const temperatureElement = document.querySelector(".cityTemp");
 const canvas = document.querySelector(".webgl");
 
 let lastDesc = "Rain";
-let currentDesc = "Rain";
+let currentDesc = lastDesc;
 let crankStates = ["Clear", "Clouds", "Rain"];
 
 
@@ -49,31 +47,30 @@ const rotateFromTo = function(source, dest, quat) {
 }
 
 
-
-//THREEJS misc [TODO refactor]
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 1, 1000);
-
-let bulb = new THREE.Group();
-let crank = new THREE.Group();
-let bulbPivot = new THREE.Group();
-
-const red = new THREE.Color(0xff0000);
-
+//THREEJS misc 
 const renderer = new THREE.WebGLRenderer( {
     canvas : canvas,
     antialias : true,
     cullFaceFrontBack : true
 });
+renderer.outputEncoding = THREE.sRGBEncoding;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 1, 1000);
+camera.position.z = 10;
+
+let bulb = new THREE.Group();
+let crank = new THREE.Group();
+let bulbPivot = new THREE.Group();
 
 
-//init
+//Init
 scene.background = new THREE.Color('#353535');
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
 
 
-//bg plane
+//Background plane
 let plane = new THREE.Mesh(
     new THREE.PlaneGeometry(60, 30, 1, 1),
     new THREE.MeshStandardMaterial( {color : 0xffffff})
@@ -90,37 +87,20 @@ let ptLight = new THREE.PointLight(new THREE.Color(0xffffff), 100, 2);
 let spotLightCrank = new THREE.SpotLight(0xffffff, 0.8, 0, Math.PI/3, 0.3);
 let spotLightState = new THREE.SpotLight(new THREE.Color(0xcceeff), 0.8, 30, Math.PI/6, 0.5, 2);
 
+//lights settings
 spotLightState.castShadow = true;
 let targetState = plane.position.clone().addScaledVector(new THREE.Vector3(-2, 1, 0), 3);
-
 spotLightState.target.position.set(targetState.x, targetState.y, targetState.z);
-// spotLightCrank.target = crank;
-
 ptLight.power = 2000;
 spotLightState.power = 10;
 spotLightCrank.power = 10;
 
-let indicator = new THREE.Mesh(
-    new THREE.SphereBufferGeometry(1),
-    new THREE.MeshPhongMaterial({specular : 0xffffff})
-);
-
-// crank.add(ptLightCrank);
-// ptLightCrank.position.set(0, 10, -2);
-    
-// scene.add(indicator);
 scene.add(dirLight);
 scene.add(ambientLight);
 scene.add(spotLightCrank);
 scene.add(spotLightState);
 scene.add(spotLightState.target);
 
-// spotLightCrank.position.set(-1, 0, 0);
-indicator.position.set(0.7, -2, -3);
-
-
-camera.position.z = 10;
-renderer.outputEncoding = THREE.sRGBEncoding;
 
 //Move pivot point of lightBulb.
 bulbPivot.rotation.order = "YXZ";
@@ -146,7 +126,7 @@ const animation = function() {
     bulbPivot.rotation.x = Math.PI * current * 0.0001;
     bulbPivot.rotation.y = Math.PI * current * 0.0001;
 
-
+    //Crank rotation
     if(mustRotate) {
         if(!crank.children[0].quaternion.equals(targetQuat)){
             crank.children[0].quaternion.rotateTowards(targetQuat, dt);
@@ -161,11 +141,8 @@ const animation = function() {
 
 //Mesh loading.
 const Gltfloader = new GLTFLoader();
-renderer.outputEncoding = THREE.sRGBEncoding;
 Gltfloader.load('../assets/light_bulb_crank.glb', function(gltf){
-
-    console.log(gltf);
-    camera.updateMatrixWorld();
+    
     let lightBulb = gltf.scene.children[0];
     let crankMesh = gltf.scene.children[1];
 
@@ -180,12 +157,8 @@ Gltfloader.load('../assets/light_bulb_crank.glb', function(gltf){
     lightBulb.add(ptLight);
     lightBulb.material.depthWrite = true;
     lightBulb.material.opacity = 0.5;
-    console.log(crankMesh);
-
-
 
     animation();
-    console.log(lightBulb);
 });
 
 //Client setup
@@ -195,19 +168,12 @@ socket.on('connect', function() {
     //Both events (on connection and on new city) emitted by serv are handled the same way.
     socket.onAny(function(eventname, res) {
 
-        // mainElement.style.opacity = 0;
-        
-        // setTimeout(function() {
         cityElement.textContent = res.city;
         countryElement.textContent = res.country;
         temperatureElement.textContent = res.temperature + "°C";
         lastDesc = currentDesc;
         currentDesc = res.description;
         
-        //     mainElement.style.opacity = 1;
-        // }, 1000)
-        
-
         //Rare states (mist, thunderstorm, drizzle, ...)
         if(currentDesc === "Thunderstorm"){
             currentDesc = "Rain";
@@ -220,15 +186,17 @@ socket.on('connect', function() {
             rotateFromTo(lastDesc, currentDesc, targetQuat);
         }
 
-        //Color interpolated (from blue to red) to control warmth.
+        //Color interpolated (from blue to red).
         let alpha = getAlpha(res.temperature, 30, 10)
-        let colorToUse = new THREE.Color(0x0000ff).lerp(red, alpha);
-        // indicator.material.color.set(colorToUse);
+        let colorToUse = new THREE.Color(0x0000ff).lerp(new THREE.Color(0xff0000), alpha);
+
+        //Interpolate white with colorToUse to control warmth.
         spotLightState.color.lerpColors(
             new THREE.Color(0xffffff),
             colorToUse,
             0.5
         );
+
         ptLight.color.lerpColors(
             new THREE.Color(0xffffff),
             colorToUse,

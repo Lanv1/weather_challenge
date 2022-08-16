@@ -1,11 +1,7 @@
-@font-face {
-    font-family: 'alarm';
-    src: url('./assets/alarm_clock.ttf');
-    
+@font-face {  
     font-family: 'bitter';
     src: url('./assets/Bitter_Regular.ttf');
 }
-
 
 html{
     margin: none;

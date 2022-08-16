@@ -25,10 +25,10 @@ const loadDb = function(filePath){
 const getNextCity = function(dataBase, currentCity = ""){
   let max = dataBase.length;
   let current = currentCity.toLowerCase();
-  let cityIndex = Math.floor(Math.random() * (max + 1));
+  let cityIndex = Math.floor(Math.random() * max);
   
   while((dataBase[cityIndex].capital).toLowerCase() == current){
-    cityIndex = Math.floor(Math.random() * (max + 1));
+    cityIndex = Math.floor(Math.random() * max);
   }
   return dataBase[cityIndex];
 }
@@ -47,7 +47,7 @@ const weatherCityHandler = function(locationData) {
     "units": "metric",
   };
 
-  const url = `https://api.openweathermap.org/data/2.5/weather?q=${options.city}&appid=${options.apiKey}&units=${options.units}`;
+  const url = encodeURI(`https://api.openweathermap.org/data/2.5/weather?q=${options.city}&appid=${options.apiKey}&units=${options.units}`);
 
   https.get(url, function(res) {
 
