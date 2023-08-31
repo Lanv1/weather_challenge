@@ -12,4 +12,6 @@
 click **[localhost](http://localhost:3000)** once server started
 
 
+### **Preview**
 
+![ezgif com-video-to-gif](https://github.com/Lanv1/weather_challenge/assets/39962623/2b974e4c-f608-446e-a70b-e03d83c71e20)
